@@ -1,1 +1,5 @@
-Revival
+- [ ]  Violence detection
+- [ ]  Weapon detection
+- [ ]  ANPR
+- [ ]  Unauthorized access and criminal detection (realtime face detection)
+- [ ]  Behavior analysis
