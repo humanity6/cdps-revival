@@ -1,0 +1,34 @@
+model:
+  path: models/best.pt
+  confidence_threshold: 0.6
+  iou_threshold: 0.5
+camera:
+  source: 0
+  width: 640
+  height: 480
+  fps: 30
+detection:
+  weapon_classes:
+  - gun
+  - knife
+  - weapon
+  alert_cooldown: 30
+  save_detections: true
+  log_detections: true
+telegram:
+  bot_token: ''
+  chat_id: ''
+  alert_message: "\U0001F6A8 Weapon Detected!\nType: {class}\nConfidence: {confidence:.2f}\n\
+    Time: {timestamp}"
+  send_image: true
+  image_quality: 85
+logging:
+  level: INFO
+  save_to_csv: true
+  csv_path: detections.csv
+  log_format: '%(asctime)s - %(levelname)s - %(message)s'
+system:
+  max_detection_history: 100
+  frame_skip: 1
+  gpu_acceleration: true
+  show_display: true

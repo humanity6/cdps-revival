@@ -17,3 +17,8 @@ cdps/
 # Ignore system files
 .DS_Store
 Thumbs.db
+
+mycdps/
+mycdps
+myenv/
+myenv
