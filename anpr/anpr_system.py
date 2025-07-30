@@ -5,9 +5,8 @@ import threading
 from datetime import datetime, timedelta
 import numpy as np
 from config import ANPRConfig
-from plate_recognition import PlateRecognitionEngine
+from plate_recognition import EnhancedPlateRecognitionEngine as PlateRecognitionEngine
 from telegram_bot import TelegramAlertBot, run_async
-from database import FaceDatabase  # We'll use the same database class
 import logging
 from collections import deque
 import asyncio
@@ -28,7 +27,6 @@ class ANPRDetectionSystem:
         self.config = ANPRConfig()
         self.plate_engine = None
         self.telegram_bot = None
-        self.database = FaceDatabase()  # Reusing the same database class
         self.camera = None
         self.running = False
         self.last_alert_times = {}  # Track last alert time for each red-listed plate
@@ -40,6 +38,9 @@ class ANPRDetectionSystem:
             'processing_times': deque(maxlen=30),
             'avg_fps': 0
         }
+        
+        # Red-listed vehicles in memory (instead of database)
+        self.red_listed_vehicles = {}  # plate_number: alert_reason
         
         # Create directories
         self.create_directories()
@@ -189,15 +190,14 @@ class ANPRDetectionSystem:
             normalized_plate = self.plate_engine.normalize_plate_number(plate_number)
             
             # Check if plate is red-listed
-            is_red_listed, alert_reason = self.database.is_plate_red_listed(normalized_plate)
+            is_red_listed = normalized_plate in self.red_listed_vehicles
+            alert_reason = self.red_listed_vehicles.get(normalized_plate, "") if is_red_listed else ""
             
             # Save plate image
             image_path = self.save_plate_image(frame, bbox, normalized_plate, is_red_listed)
             
-            # Record detection in database
-            detection_id = self.database.add_plate_detection(
-                normalized_plate, is_red_listed, confidence, image_path
-            )
+            # No database recording, set detection_id to None
+            detection_id = None
             
             if is_red_listed:
                 logger.warning(f"🚨 RED ALERT: Detected red-listed vehicle {normalized_plate} - {alert_reason}")
@@ -237,8 +237,6 @@ class ANPRDetectionSystem:
             )
             
             if success:
-                # Mark alert as sent in database
-                self.database.mark_plate_alert_sent(detection_id)
                 logger.info(f"✅ Red alert sent successfully for plate {plate_number}")
             else:
                 logger.error(f"❌ Failed to send red alert for plate {plate_number}")
@@ -327,7 +325,10 @@ class ANPRDetectionSystem:
     def send_system_status(self):
         """Send system status via Telegram."""
         try:
-            stats = self.database.get_plate_detection_stats()
+            stats = {
+                'red_listed_count': len(self.red_listed_vehicles),
+                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
             stats.update(self.performance_stats)
             
             run_async(self.telegram_bot.send_plate_detection_status(stats))
@@ -357,13 +358,10 @@ class ANPRDetectionSystem:
     def add_red_vehicle(self, plate_number, alert_reason="Suspicious Activity"):
         """Add a vehicle to the red alert list."""
         try:
-            vehicle_id = self.database.add_red_alerted_vehicle(plate_number, alert_reason)
-            if vehicle_id:
-                logger.info(f"✅ Added red-listed vehicle: {plate_number}")
-                return True
-            else:
-                logger.info(f"📝 Updated existing red-listed vehicle: {plate_number}")
-                return True
+            # Add or update the vehicle in the in-memory dictionary
+            self.red_listed_vehicles[plate_number] = alert_reason
+            logger.info(f"✅ Added/updated red-listed vehicle: {plate_number}")
+            return True
         except Exception as e:
             logger.error(f"❌ Error adding red-listed vehicle: {e}")
             return False
@@ -371,9 +369,13 @@ class ANPRDetectionSystem:
     def remove_red_vehicle(self, plate_number):
         """Remove a vehicle from the red alert list."""
         try:
-            self.database.remove_red_alerted_vehicle(plate_number)
-            logger.info(f"✅ Removed red-listed vehicle: {plate_number}")
-            return True
+            if plate_number in self.red_listed_vehicles:
+                del self.red_listed_vehicles[plate_number]
+                logger.info(f"✅ Removed red-listed vehicle: {plate_number}")
+                return True
+            else:
+                logger.warning(f"⚠️ Vehicle {plate_number} not in red list")
+                return False
         except Exception as e:
             logger.error(f"❌ Error removing red-listed vehicle: {e}")
             return False
@@ -381,7 +383,8 @@ class ANPRDetectionSystem:
     def list_red_vehicles(self):
         """List all red-alerted vehicles."""
         try:
-            vehicles = self.database.get_all_red_alerted_vehicles()
+            # Convert dictionary to list of tuples (plate_number, alert_reason) for API compatibility
+            vehicles = [(plate, reason) for plate, reason in self.red_listed_vehicles.items()]
             return vehicles
         except Exception as e:
             logger.error(f"❌ Error listing red-listed vehicles: {e}")

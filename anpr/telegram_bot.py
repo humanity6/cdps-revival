@@ -91,38 +91,20 @@ class TelegramAlertBot:
             logger.error(f"❌ Error sending photo: {e}")
             return False
     
-    async def send_unknown_person_alert(self, image, timestamp=None, location="Camera 1"):
-        """Send an alert for an unknown person detection."""
-        if timestamp is None:
-            timestamp = datetime.now()
-        
-        # Format the alert message
-        message = f"""
-🚨 <b>UNKNOWN PERSON DETECTED</b> 🚨
 
-📅 <b>Date:</b> {timestamp.strftime('%Y-%m-%d')}
-🕒 <b>Time:</b> {timestamp.strftime('%H:%M:%S')}
-📍 <b>Location:</b> {location}
-
-⚠️ An unidentified person has been detected in the surveillance area. Please review the attached image and take appropriate action if necessary.
-
-#UnknownPerson #SecurityAlert
-        """
-        
-        return await self.send_photo_with_message(image, message.strip())
     
-    async def send_system_status(self, stats):
+    async def send_plate_detection_status(self, stats):
         """Send system status and statistics."""
         message = f"""
-📊 <b>Face Detection System Status</b>
+📊 <b>ANPR System Status</b>
 
-🔍 <b>Total Detections:</b> {stats.get('total_detections', 0)}
-✅ <b>Known Persons:</b> {stats.get('known_detections', 0)}
-❌ <b>Unknown Persons:</b> {stats.get('unknown_detections', 0)}
-🚨 <b>Recent Alerts (24h):</b> {stats.get('recent_alerts', 0)}
+🔍 <b>Frames Processed:</b> {stats.get('frames_processed', 0)}
+✅ <b>Plates Detected:</b> {stats.get('plates_detected', 0)}
+🚨 <b>Red Alerts Sent:</b> {stats.get('red_alerts_sent', 0)}
+⚠️ <b>Red-listed Plates:</b> {stats.get('red_listed_count', 0)}
 
 🟢 <b>System Status:</b> Running
-📅 <b>Last Update:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+📅 <b>Last Update:</b> {stats.get('last_updated', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}
 
 #SystemStatus #Statistics
         """
@@ -199,22 +181,37 @@ class TelegramAlertBot:
         
         return await self.send_message(message.strip())
     
-    async def test_connection(self):
-        """Test the Telegram bot connection."""
-        try:
-            if not self.bot:
-                return False, "Bot not initialized"
-            
-            # Get bot info
-            bot_info = await self.bot.get_me()
-            logger.info(f"✅ Bot connection test successful. Bot name: {bot_info.first_name}")
-            
-            # Send test message
-            test_message = f"""
-🧪 <b>Connection Test</b>
+    async def send_startup_message(self):
+        """Send a message when the system starts up."""
+        message = f"""
+🟢 <b>ANPR System Started</b>
 
-✅ Telegram bot is working correctly!
-🤖 <b>Bot Name:</b> {bot_info.first_name}
+✅ The ANPR Detection System is now online and monitoring for vehicles.
+📅 <b>Start Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+#SystemStartup #Online
+        """
+        return await self.send_message(message.strip())
+    
+    async def send_shutdown_message(self):
+        """Send a message when the system shuts down."""
+        message = f"""
+🔴 <b>ANPR System Stopped</b>
+
+ℹ️ The ANPR Detection System has been stopped.
+📅 <b>Stop Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+#SystemShutdown #Offline
+        """
+        return await self.send_message(message.strip())
+    
+    async def test_connection(self):
+        """Test the connection to Telegram."""
+        try:
+            test_message = f"""
+🔄 <b>Connection Test Successful</b>
+
+✅ Telegram bot is connected and functional.
 📅 <b>Test Time:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 #ConnectionTest #Success
@@ -238,10 +235,10 @@ def run_async(coro):
     
     return loop.run_until_complete(coro)
 
-def send_alert_sync(image, timestamp=None, location="Camera 1"):
-    """Synchronous wrapper for sending alerts."""
+def send_plate_alert_sync(image, plate_number, alert_reason, timestamp=None, location="Camera 1"):
+    """Synchronous wrapper for sending plate alerts."""
     bot = TelegramAlertBot()
-    return run_async(bot.send_unknown_person_alert(image, timestamp, location))
+    return run_async(bot.send_red_plate_alert(image, plate_number, alert_reason, timestamp, location))
 
 def send_message_sync(message):
     """Synchronous wrapper for sending messages."""

@@ -36,19 +36,15 @@ class DetectionConfig:
     validation_region: str = 'generic'  # 'indian', 'us', 'uk', 'generic'
 
 @dataclass
-class DatabaseConfig:
-    """Database configuration settings."""
-    db_path: str = "known_faces.db"
-    enable_face_recognition: bool = True
-    face_encoding_model: str = "hog"  # 'hog' or 'cnn'
-    face_recognition_tolerance: float = 0.6
+class AlertConfig:
+    """Alert configuration settings."""
+    interval: int = 60  # seconds between alerts for the same plate
 
 @dataclass
 class StorageConfig:
     """File storage configuration settings."""
     detected_plates_dir: str = "detected_plates"
     red_alert_plates_dir: str = "red_alert_plates"
-    unknown_faces_dir: str = "unknown_faces"
     uploads_dir: str = "web_frontend/uploads"
     
     # File management
@@ -103,7 +99,7 @@ class ANPRConfig:
         # Core configuration objects
         self.camera = CameraConfig()
         self.detection = DetectionConfig()
-        self.database = DatabaseConfig()
+        self.alert = AlertConfig()
         self.storage = StorageConfig()
         self.telegram = TelegramConfig()
         self.performance = PerformanceConfig()
@@ -128,9 +124,7 @@ class ANPRConfig:
         directories = [
             self.storage.detected_plates_dir,
             self.storage.red_alert_plates_dir,
-            self.storage.unknown_faces_dir,
-            self.storage.uploads_dir,
-            os.path.dirname(self.database.db_path) if os.path.dirname(self.database.db_path) else '.'
+            self.storage.uploads_dir
         ]
         
         for directory in directories:
@@ -162,7 +156,7 @@ class ANPRConfig:
             config_data = {
                 'camera': asdict(self.camera),
                 'detection': asdict(self.detection),
-                'database': asdict(self.database),
+                'alert': asdict(self.alert),
                 'storage': asdict(self.storage),
                 'telegram': asdict(self.telegram),
                 'performance': asdict(self.performance),
@@ -182,13 +176,12 @@ class ANPRConfig:
             'version': self.version,
             'camera_enabled': True,
             'detection_min_confidence': self.detection.min_confidence,
-            'face_recognition_enabled': self.database.enable_face_recognition,
+            'alert_interval': self.alert.interval,
             'telegram_enabled': self.telegram.enabled,
             'web_interface_enabled': True,
             'storage_directories': {
                 'detected_plates': self.storage.detected_plates_dir,
-                'red_alerts': self.storage.red_alert_plates_dir,
-                'unknown_faces': self.storage.unknown_faces_dir
+                'red_alerts': self.storage.red_alert_plates_dir
             }
         }
 
@@ -214,11 +207,9 @@ def load_env_config():
     if os.getenv('ANPR_VALIDATION_REGION'):
         config.detection.validation_region = os.getenv('ANPR_VALIDATION_REGION')
     
-    # Database settings
-    if os.getenv('ANPR_DB_PATH'):
-        config.database.db_path = os.getenv('ANPR_DB_PATH')
-    if os.getenv('ANPR_FACE_RECOGNITION'):
-        config.database.enable_face_recognition = os.getenv('ANPR_FACE_RECOGNITION').lower() == 'true'
+    # Alert settings
+    if os.getenv('ANPR_ALERT_INTERVAL'):
+        config.alert.interval = int(os.getenv('ANPR_ALERT_INTERVAL'))
     
     # Telegram settings
     if os.getenv('ANPR_TELEGRAM_TOKEN'):
@@ -252,12 +243,9 @@ def validate_config(config: ANPRConfig) -> Tuple[bool, List[str]]:
     if not (0.0 <= config.detection.min_confidence <= 1.0):
         errors.append("Detection confidence must be between 0.0 and 1.0")
     
-    # Validate database settings
-    if config.database.enable_face_recognition:
-        if config.database.face_encoding_model not in ['hog', 'cnn']:
-            errors.append("Face encoding model must be 'hog' or 'cnn'")
-        if not (0.0 <= config.database.face_recognition_tolerance <= 1.0):
-            errors.append("Face recognition tolerance must be between 0.0 and 1.0")
+    # Validate alert settings
+    if config.alert.interval < 0:
+        errors.append("Alert interval must be non-negative")
     
     # Validate telegram settings
     if config.telegram.enabled and not config.telegram.bot_token:
