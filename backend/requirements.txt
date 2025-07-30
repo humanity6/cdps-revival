@@ -20,7 +20,7 @@ psutil>=5.9.0
 # Machine Learning frameworks
 torch>=2.0.0
 torchvision>=0.15.0
-tensorflow>=2.13.0
+tensorflow>=2.10.0,<2.14.0
 ultralytics>=8.3.0
 
 # Computer Vision and ML libraries

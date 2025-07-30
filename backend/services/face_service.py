@@ -16,6 +16,11 @@ import base64
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'face detection'))
 
 try:
+    # Import face detection modules from the correct path
+    face_path = os.path.join(os.path.dirname(__file__), '..', '..', 'face detection')
+    if face_path not in sys.path:
+        sys.path.append(face_path)
+    
     from face_detection_system import FaceDetectionSystem
     from main import EnhancedFaceDetectionSystem
     import config as face_config

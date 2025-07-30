@@ -26,9 +26,9 @@ class BackendConfig(BaseSettings):
     reload: bool = Field(False, env="API_RELOAD")
     
     # CORS Settings
-    cors_origins: list = Field(["*"], env="CORS_ORIGINS")
-    cors_methods: list = Field(["*"], env="CORS_METHODS")
-    cors_headers: list = Field(["*"], env="CORS_HEADERS")
+    cors_origins: list = Field(default=["*"])
+    cors_methods: list = Field(default=["*"])
+    cors_headers: list = Field(default=["*"])
     
     # Logging
     log_level: LogLevel = Field(LogLevel.INFO, env="LOG_LEVEL")
@@ -64,18 +64,11 @@ class BackendConfig(BaseSettings):
     secret_key: str = Field("your-secret-key-here", env="SECRET_KEY")
     access_token_expire_minutes: int = Field(30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     
-    @field_validator('cors_origins', 'cors_methods', 'cors_headers', mode='before')
-    @classmethod
-    def parse_cors_list(cls, v):
-        if isinstance(v, str):
-            if v == "*":
-                return ["*"]
-            return [item.strip() for item in v.split(',') if item.strip()]
-        return v
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": False,
+        "extra": "ignore"
+    }
 
 class ModuleConfig:
     """
