@@ -22,3 +22,12 @@ mycdps/
 mycdps
 myenv/
 myenv
+
+# add more ignores as needed
+# Ignore log files
+*.log
+# Ignore backup files
+*.bak
+# Ignore temporary files
+*.tmp
+# Ignore configuration files
