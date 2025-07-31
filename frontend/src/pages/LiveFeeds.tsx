@@ -72,12 +72,22 @@ const LiveFeeds: React.FC = () => {
   const handleStopStream = async () => {
     setLoading(true);
     try {
-      await liveApi.stopCamera();
+      // Stop video stream first
       stopVideoStream();
+      
+      // Then stop camera backend
+      await liveApi.stopCamera();
       setIsStreaming(false);
+      
+      // Clear video frame
+      // This should be handled by the websocket service, but let's ensure it
+      
       await fetchCameraStatus();
     } catch (error) {
       console.error('Failed to stop stream:', error);
+      // Even if backend fails, we should stop the frontend stream
+      stopVideoStream();
+      setIsStreaming(false);
     } finally {
       setLoading(false);
     }

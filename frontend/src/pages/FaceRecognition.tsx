@@ -335,8 +335,8 @@ const FaceRecognition: React.FC = () => {
                     <ListItemText
                       primary={detection.person_name || 'Unknown'}
                       secondary={
-                        <>
-                          <Typography variant="caption" display="block">
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
                             {new Date(detection.timestamp).toLocaleString()}
                           </Typography>
                           <Chip
@@ -344,7 +344,7 @@ const FaceRecognition: React.FC = () => {
                             label={`${(detection.confidence * 100).toFixed(1)}%`}
                             color={getConfidenceColor(detection.confidence)}
                           />
-                        </>
+                        </Box>
                       }
                     />
                   </ListItem>

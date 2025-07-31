@@ -100,10 +100,17 @@ class EnhancedPlateRecognitionEngine:
             rgb_frame = cv2.cvtColor(enhanced_frame, cv2.COLOR_BGR2RGB)
 
             # Run FastANPR detection
-            async def _run_anpr(img):
-                return await self.anpr.run([img])
-
-            detections_nested = asyncio.run(_run_anpr(rgb_frame))
+            try:
+                # Try to get the current event loop
+                loop = asyncio.get_running_loop()
+                # If we're in an event loop, create a task
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, self.anpr.run([rgb_frame]))
+                    detections_nested = future.result()
+            except RuntimeError:
+                # No event loop running, safe to use asyncio.run()
+                detections_nested = asyncio.run(self.anpr.run([rgb_frame]))
             detections_raw = detections_nested[0] if detections_nested else []
 
             results = []

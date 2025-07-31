@@ -302,22 +302,23 @@ const WeaponDetectionPage: React.FC = () => {
                     <ListItemText
                       primary={detection.weapon_type}
                       secondary={
-                        <>
-                          <Typography variant="caption" display="block">
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
                             {new Date(detection.timestamp).toLocaleString()}
                           </Typography>
-                          <Chip
-                            size="small"
-                            label={detection.severity}
-                            color={getSeverityColor(detection.severity)}
-                          />
-                          <Chip
-                            size="small"
-                            label={`${(detection.confidence * 100).toFixed(1)}%`}
-                            color={detection.confidence > 0.8 ? 'success' : 'warning'}
-                            sx={{ ml: 1 }}
-                          />
-                        </>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Chip
+                              size="small"
+                              label={detection.severity}
+                              color={getSeverityColor(detection.severity)}
+                            />
+                            <Chip
+                              size="small"
+                              label={`${(detection.confidence * 100).toFixed(1)}%`}
+                              color={detection.confidence > 0.8 ? 'success' : 'warning'}
+                            />
+                          </Box>
+                        </Box>
                       }
                     />
                   </ListItem>

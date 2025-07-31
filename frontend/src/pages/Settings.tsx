@@ -47,9 +47,31 @@ const SettingsPage: React.FC = () => {
   const fetchSettings = async () => {
     try {
       const data = await settingsApi.getSettings();
-      setSettings(data);
+      // Handle the API response structure which has a 'modules' property
+      const settingsData = data.modules || data;
+      setSettings(settingsData);
     } catch (error) {
       console.error('Failed to fetch settings:', error);
+      // Set default settings structure to prevent crashes
+      setSettings({
+        face: {
+          detection_threshold: 0.5,
+          recognition_threshold: 0.4,
+          max_faces_per_frame: 10
+        },
+        weapon: {
+          detection_threshold: 0.5,
+          nms_threshold: 0.4
+        },
+        violence: {
+          detection_threshold: 0.5,
+          frame_buffer_size: 16
+        },
+        anpr: {
+          detection_threshold: 0.5,
+          ocr_threshold: 0.6
+        }
+      });
     }
   };
 
@@ -83,10 +105,14 @@ const SettingsPage: React.FC = () => {
   const updateSetting = (module: string, key: string, value: any) => {
     setSettings(prev => {
       if (!prev) return null;
+      
+      // Ensure the module exists in the settings
+      const currentModule = (prev as any)[module] || {};
+      
       return {
         ...prev,
         [module]: {
-          ...(prev as any)[module],
+          ...currentModule,
           [key]: value,
         },
       };
@@ -133,7 +159,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>Detection Threshold</Typography>
               <Slider
-                value={settings.face.detection_threshold}
+                value={settings.face?.detection_threshold || 0.5}
                 onChange={(_, value) => updateSetting('face', 'detection_threshold', value)}
                 min={0.1}
                 max={1.0}
@@ -146,7 +172,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>Recognition Threshold</Typography>
               <Slider
-                value={settings.face.recognition_threshold}
+                value={settings.face?.recognition_threshold || 0.4}
                 onChange={(_, value) => updateSetting('face', 'recognition_threshold', value)}
                 min={0.1}
                 max={1.0}
@@ -161,7 +187,7 @@ const SettingsPage: React.FC = () => {
                 fullWidth
                 label="Max Faces Per Frame"
                 type="number"
-                value={settings.face.max_faces_per_frame}
+                value={settings.face?.max_faces_per_frame || 10}
                 onChange={(e) => updateSetting('face', 'max_faces_per_frame', Number(e.target.value))}
                 inputProps={{ min: 1, max: 20 }}
               />
@@ -200,7 +226,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>Detection Threshold</Typography>
               <Slider
-                value={settings.weapon.detection_threshold}
+                value={settings.weapon?.detection_threshold || 0.5}
                 onChange={(_, value) => updateSetting('weapon', 'detection_threshold', value)}
                 min={0.1}
                 max={1.0}
@@ -213,7 +239,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>NMS Threshold</Typography>
               <Slider
-                value={settings.weapon.nms_threshold}
+                value={settings.weapon?.nms_threshold || 0.4}
                 onChange={(_, value) => updateSetting('weapon', 'nms_threshold', value)}
                 min={0.1}
                 max={1.0}
@@ -256,7 +282,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>Detection Threshold</Typography>
               <Slider
-                value={settings.violence.detection_threshold}
+                value={settings.violence?.detection_threshold || 0.5}
                 onChange={(_, value) => updateSetting('violence', 'detection_threshold', value)}
                 min={0.1}
                 max={1.0}
@@ -271,7 +297,7 @@ const SettingsPage: React.FC = () => {
                 fullWidth
                 label="Frame Buffer Size"
                 type="number"
-                value={settings.violence.frame_buffer_size}
+                value={settings.violence?.frame_buffer_size || 16}
                 onChange={(e) => updateSetting('violence', 'frame_buffer_size', Number(e.target.value))}
                 inputProps={{ min: 5, max: 30 }}
               />
@@ -310,7 +336,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>Detection Threshold</Typography>
               <Slider
-                value={settings.anpr.detection_threshold}
+                value={settings.anpr?.detection_threshold || 0.5}
                 onChange={(_, value) => updateSetting('anpr', 'detection_threshold', value)}
                 min={0.1}
                 max={1.0}
@@ -323,7 +349,7 @@ const SettingsPage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <Typography gutterBottom>OCR Threshold</Typography>
               <Slider
-                value={settings.anpr.ocr_threshold}
+                value={settings.anpr?.ocr_threshold || 0.6}
                 onChange={(_, value) => updateSetting('anpr', 'ocr_threshold', value)}
                 min={0.1}
                 max={1.0}

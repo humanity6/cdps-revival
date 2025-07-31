@@ -133,6 +133,9 @@ async def initialize_services():
     set_detection_services(detection_services)
     set_settings_services(detection_services)
     
+    # Set services in Socket.IO manager
+    socketio_manager.set_detection_services(detection_services)
+    
     logger.info(f"📊 Initialized {len(detection_services)} detection services")
 
 def initialize_websocket_manager():

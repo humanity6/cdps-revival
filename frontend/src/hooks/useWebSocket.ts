@@ -53,6 +53,8 @@ export const useWebSocket = () => {
 
   const stopVideoStream = useCallback(() => {
     websocketService.stopVideoStream();
+    // Clear video frame when stopping
+    setVideoFrame(null);
   }, []);
 
   const updateStreamSettings = useCallback((settings: any) => {

@@ -15,8 +15,14 @@ class WebSocketService {
 
     try {
       this.socket = io('http://127.0.0.1:8000', {
-        transports: ['websocket'],
-        upgrade: false,
+        transports: ['websocket', 'polling'],
+        upgrade: true,
+        timeout: 20000,
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
       });
     } catch (error) {
       console.warn('WebSocket connection failed, using mock mode:', error);
@@ -30,9 +36,19 @@ class WebSocketService {
       this.emit('connection', { status: 'connected' });
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      this.emit('connection', { status: 'disconnected' });
+    this.socket.on('disconnect', (reason) => {
+      console.log('WebSocket disconnected:', reason);
+      this.emit('connection', { status: 'disconnected', reason });
+      
+      // Only attempt manual reconnect for certain disconnect reasons
+      if (reason === 'io server disconnect' || reason === 'transport close') {
+        this.attemptReconnect();
+      }
+    });
+
+    this.socket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error);
+      this.emit('error', error);
       this.attemptReconnect();
     });
 
@@ -120,6 +136,8 @@ class WebSocketService {
   // Request to stop video stream
   stopVideoStream() {
     this.send('stop_stream', {});
+    // Clear any locally stored video frame when stopping
+    this.emit('video_frame', null);
   }
 
   // Update stream settings
