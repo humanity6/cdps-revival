@@ -30,7 +30,7 @@ def base64_to_image(base64_string: str) -> Optional[np.ndarray]:
         logger.error(f"Failed to decode base64 image: {e}")
         return None
 
-def image_to_base64(image: np.ndarray, format: str = 'jpg') -> Optional[str]:
+def image_to_base64(image: np.ndarray, format: str = 'jpg', include_prefix: bool = False) -> Optional[str]:
     """
     Convert OpenCV image to base64 string
     """
@@ -42,7 +42,11 @@ def image_to_base64(image: np.ndarray, format: str = 'jpg') -> Optional[str]:
         
         # Convert to base64
         base64_string = base64.b64encode(encoded_image.tobytes()).decode('utf-8')
-        return f"data:image/{format};base64,{base64_string}"
+        
+        if include_prefix:
+            return f"data:image/{format};base64,{base64_string}"
+        else:
+            return base64_string
     except Exception as e:
         logger.error(f"Failed to encode image to base64: {e}")
         return None

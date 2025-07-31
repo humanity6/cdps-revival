@@ -22,6 +22,7 @@ const WeaponDetectionPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [annotatedImageUrl, setAnnotatedImageUrl] = useState<string | null>(null);
   const [webcamActive, setWebcamActive] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +48,7 @@ const WeaponDetectionPage: React.FC = () => {
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
+      setAnnotatedImageUrl(null); // Clear previous annotations
     }
   };
 
@@ -56,8 +58,15 @@ const WeaponDetectionPage: React.FC = () => {
     setLoading(true);
     try {
       const result = await detectionsApi.uploadImage(selectedFile, ['weapon']);
-      const weaponDetections = result.detections?.weapon || [];
+      const weaponDetections = result.weapon_results?.detections || [];
       setDetections(weaponDetections);
+      
+      // Set annotated image if available
+      if (result.annotated_image) {
+        setAnnotatedImageUrl(`data:image/jpeg;base64,${result.annotated_image}`);
+      } else {
+        setAnnotatedImageUrl(null);
+      }
     } catch (error) {
       console.error('Weapon detection failed:', error);
     } finally {
@@ -67,13 +76,43 @@ const WeaponDetectionPage: React.FC = () => {
 
   const startWebcam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Stop any existing streams first
+      stopWebcam();
+      
+      // Try different video constraints if the first one fails
+      const constraints = [
+        { video: { width: 640, height: 480, facingMode: 'user' } },
+        { video: { width: 640, height: 480 } },
+        { video: true }
+      ];
+      
+      let stream = null;
+      let lastError = null;
+      
+      for (const constraint of constraints) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraint);
+          break;
+        } catch (err) {
+          lastError = err;
+          console.warn('Failed with constraint:', constraint, err);
+        }
+      }
+      
+      if (!stream) {
+        throw lastError || new Error('Could not access webcam with any constraints');
+      }
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
         setWebcamActive(true);
       }
     } catch (error) {
       console.error('Failed to start webcam:', error);
+      alert(`Failed to access webcam: ${error.message}. Please ensure no other application is using the camera and permissions are granted.`);
     }
   };
 
@@ -103,6 +142,7 @@ const WeaponDetectionPage: React.FC = () => {
           const file = new File([blob], 'webcam-capture.jpg', { type: 'image/jpeg' });
           setSelectedFile(file);
           setPreviewUrl(URL.createObjectURL(file));
+          setAnnotatedImageUrl(null); // Clear previous annotations
           await handleDetectWeapons();
         }
       }, 'image/jpeg');
@@ -177,13 +217,18 @@ const WeaponDetectionPage: React.FC = () => {
                   </Box>
                 )}
 
-                {previewUrl && (
+                {(annotatedImageUrl || previewUrl) && (
                   <Box sx={{ mb: 2 }}>
                     <img
-                      src={previewUrl}
-                      alt="Preview"
+                      src={annotatedImageUrl || previewUrl}
+                      alt={annotatedImageUrl ? "Detection Results" : "Preview"}
                       style={{ width: '100%', maxWidth: '640px', height: 'auto' }}
                     />
+                    {annotatedImageUrl && (
+                      <Typography variant="caption" display="block" sx={{ mt: 1, textAlign: 'center' }}>
+                        Image with detected weapons highlighted
+                      </Typography>
+                    )}
                   </Box>
                 )}
 
@@ -257,7 +302,7 @@ const WeaponDetectionPage: React.FC = () => {
                     <ListItemText
                       primary={detection.weapon_type}
                       secondary={
-                        <Box>
+                        <>
                           <Typography variant="caption" display="block">
                             {new Date(detection.timestamp).toLocaleString()}
                           </Typography>
@@ -272,7 +317,7 @@ const WeaponDetectionPage: React.FC = () => {
                             color={detection.confidence > 0.8 ? 'success' : 'warning'}
                             sx={{ ml: 1 }}
                           />
-                        </Box>
+                        </>
                       }
                     />
                   </ListItem>

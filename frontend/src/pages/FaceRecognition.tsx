@@ -77,13 +77,43 @@ const FaceRecognition: React.FC = () => {
 
   const startWebcam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Stop any existing streams first
+      stopWebcam();
+      
+      // Try different video constraints if the first one fails
+      const constraints = [
+        { video: { width: 640, height: 480, facingMode: 'user' } },
+        { video: { width: 640, height: 480 } },
+        { video: true }
+      ];
+      
+      let stream = null;
+      let lastError = null;
+      
+      for (const constraint of constraints) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraint);
+          break;
+        } catch (err) {
+          lastError = err;
+          console.warn('Failed with constraint:', constraint, err);
+        }
+      }
+      
+      if (!stream) {
+        throw lastError || new Error('Could not access webcam with any constraints');
+      }
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
         setWebcamActive(true);
       }
     } catch (error) {
       console.error('Failed to start webcam:', error);
+      alert(`Failed to access webcam: ${error.message}. Please ensure no other application is using the camera and permissions are granted.`);
     }
   };
 
@@ -305,7 +335,7 @@ const FaceRecognition: React.FC = () => {
                     <ListItemText
                       primary={detection.person_name || 'Unknown'}
                       secondary={
-                        <Box>
+                        <>
                           <Typography variant="caption" display="block">
                             {new Date(detection.timestamp).toLocaleString()}
                           </Typography>
@@ -314,7 +344,7 @@ const FaceRecognition: React.FC = () => {
                             label={`${(detection.confidence * 100).toFixed(1)}%`}
                             color={getConfidenceColor(detection.confidence)}
                           />
-                        </Box>
+                        </>
                       }
                     />
                   </ListItem>

@@ -18,14 +18,15 @@ class SocketIOManager:
         self.sio = socketio.AsyncServer(
             cors_allowed_origins="*",  # Allow all origins for development
             logger=False,
-            engineio_logger=False
+            engineio_logger=False,
+            async_mode='asgi'
         )
         self.connected_clients: Dict[str, Dict[str, Any]] = {}
         self.setup_events()
     
     def get_asgi_app(self):
         """Get the ASGI app for Socket.io"""
-        return socketio.ASGIApp(self.sio)
+        return socketio.ASGIApp(self.sio, other_asgi_app=None)
     
     def setup_events(self):
         """Set up Socket.io event handlers"""

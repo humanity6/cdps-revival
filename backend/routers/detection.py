@@ -380,6 +380,21 @@ async def multi_detection(
                 elif module_name == 'violence':
                     results.violence_results = result
         
+        # Create annotated image if there are any detections
+        annotated_image = image.copy()
+        has_detections = False
+        
+        # Draw weapon detections
+        if results.weapon_results and results.weapon_results.success and results.weapon_results.detections:
+            weapon_service = services.get('weapon')
+            if weapon_service and hasattr(weapon_service, 'create_annotated_image'):
+                annotated_image = weapon_service.create_annotated_image(annotated_image, results.weapon_results.detections)
+                has_detections = True
+        
+        # Convert annotated image to base64 if there were detections
+        if has_detections:
+            results.annotated_image = image_to_base64(annotated_image)
+        
         results.processing_time = time.time() - start_time
         return results
         

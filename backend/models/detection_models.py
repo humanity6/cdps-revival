@@ -115,6 +115,7 @@ class MultiDetectionResponse(BaseModel):
     weapon_results: Optional[WeaponResponse] = None
     processing_time: float
     error: Optional[str] = None
+    annotated_image: Optional[str] = None  # Base64 encoded annotated image
 
 # Live Feed Models
 class LiveFeedConfig(BaseModel):
