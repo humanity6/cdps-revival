@@ -96,7 +96,7 @@ class UnifiedDatabaseSchema:
                 confidence_score REAL CHECK(confidence_score >= 0 AND confidence_score <= 1),
                 status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'PROCESSED', 'ARCHIVED')),
                 location TEXT DEFAULT 'Camera_1',
-                metadata TEXT, -- JSON field for module-specific data
+                event_metadata TEXT, -- JSON field for module-specific data
                 alert_triggered BOOLEAN DEFAULT FALSE,
                 severity_level TEXT DEFAULT 'MEDIUM' CHECK(severity_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
                 image_path TEXT,

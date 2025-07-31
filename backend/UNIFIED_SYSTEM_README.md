@@ -40,9 +40,6 @@ A comprehensive SQLite database schema and Telegram alert system designed for th
 # Navigate to the backend directory
 cd backend/
 
-# Install dependencies
-pip install -r unified_requirements.txt
-
 # Set environment variables
 export TELEGRAM_BOT_TOKEN="your_bot_token_here"
 export TELEGRAM_CHAT_ID="your_chat_id_here"

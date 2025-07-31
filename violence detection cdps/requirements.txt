@@ -9,4 +9,5 @@ python-dotenv>=1.0.0
 torch>=2.0.0
 torchvision>=0.15.0
 Flask>=2.3.0
-Werkzeug>=2.3.0 
+Werkzeug>=2.3.0
+tensorflow>=2.10.0 

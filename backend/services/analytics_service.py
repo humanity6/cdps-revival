@@ -13,8 +13,8 @@ import hashlib
 from collections import defaultdict, Counter
 import statistics
 
-from ..database.operations import DatabaseOperations
-from ..database.models import DatabaseManager, Event, QueryHelpers
+from database.operations import DatabaseOperations
+from database.models import DatabaseManager, Event, QueryHelpers
 from sqlalchemy import func, and_, or_, desc, asc, text
 from sqlalchemy.orm import Session
 
@@ -331,7 +331,7 @@ class AnalyticsService:
                 
                 # Add module-specific suggestions
                 if field == 'plate_number' and 'anpr' in query.lower():
-                    from ..database.models import AnprEvent
+                    from database.models import AnprEvent
                     results = session.query(AnprEvent.plate_number).filter(
                         AnprEvent.plate_number.contains(query.upper())
                     ).distinct().limit(limit).all()
@@ -569,7 +569,7 @@ class AnalyticsService:
     # Module-specific analytics
     def _get_anpr_analytics(self, session: Session, start_time: datetime, end_time: datetime) -> Dict[str, Any]:
         """Get ANPR-specific analytics."""
-        from ..database.models import AnprEvent
+        from database.models import AnprEvent
         
         # ANPR events in time range
         anpr_events = session.query(Event).join(AnprEvent).filter(
@@ -599,7 +599,7 @@ class AnalyticsService:
     
     def _get_face_analytics(self, session: Session, start_time: datetime, end_time: datetime) -> Dict[str, Any]:
         """Get face recognition analytics."""
-        from ..database.models import FaceEvent
+        from database.models import FaceEvent
         
         face_events = session.query(Event).join(FaceEvent).filter(
             and_(
@@ -626,7 +626,7 @@ class AnalyticsService:
     
     def _get_violence_analytics(self, session: Session, start_time: datetime, end_time: datetime) -> Dict[str, Any]:
         """Get violence detection analytics."""
-        from ..database.models import ViolenceEvent
+        from database.models import ViolenceEvent
         
         violence_events = session.query(Event).join(ViolenceEvent).filter(
             and_(
@@ -654,7 +654,7 @@ class AnalyticsService:
     
     def _get_weapon_analytics(self, session: Session, start_time: datetime, end_time: datetime) -> Dict[str, Any]:
         """Get weapon detection analytics."""
-        from ..database.models import WeaponEvent
+        from database.models import WeaponEvent
         
         weapon_events = session.query(Event).join(WeaponEvent).filter(
             and_(
@@ -687,7 +687,7 @@ class AnalyticsService:
         search_term = f"%{text_search}%"
         return query.filter(
             or_(
-                Event.metadata.contains(text_search),
+                Event.event_metadata.contains(text_search),
                 Event.location.contains(text_search)
             )
         )
@@ -754,7 +754,7 @@ class AnalyticsService:
             'processing_time': event.processing_time
         }
         
-        if event.metadata:
+        if event.event_metadata:
             event_dict['metadata'] = event.get_metadata()
         
         if include_related:
@@ -902,7 +902,7 @@ class AnalyticsService:
                     value = str(value)
                 # Escape commas and quotes
                 if ',' in value or '"' in value:
-                    value = f'"{value.replace('"', '""')}"'
+                    value = f'"{value.replace(chr(34), chr(34)+chr(34))}"'
                 row.append(value)
             csv_lines.append(','.join(row))
         

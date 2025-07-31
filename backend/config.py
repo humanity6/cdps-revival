@@ -2,10 +2,31 @@
 Global Configuration Management for Unified Backend API
 """
 import os
+import sys
 from typing import Dict, Any, Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 from enum import Enum
+
+# Import ANPRConfig from the ANPR module
+try:
+    # Add ANPR module to path
+    anpr_path = os.path.join(os.path.dirname(__file__), '..', 'anpr')
+    abs_anpr_path = os.path.abspath(anpr_path)
+    if abs_anpr_path not in sys.path:
+        sys.path.insert(0, abs_anpr_path)
+    
+    # Import using importlib to avoid circular import
+    import importlib.util
+    config_path = os.path.join(abs_anpr_path, "config.py")
+    spec = importlib.util.spec_from_file_location("anpr_config", config_path)
+    anpr_config_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(anpr_config_module)
+    ANPRConfig = anpr_config_module.ANPRConfig
+    ANPR_CONFIG_AVAILABLE = True
+except Exception as e:
+    ANPRConfig = None
+    ANPR_CONFIG_AVAILABLE = False
 
 class LogLevel(str, Enum):
     DEBUG = "DEBUG"

@@ -11,7 +11,19 @@ import time
 import logging
 from typing import Dict, Optional, Any
 import base64
-import tensorflow as tf
+
+logger = logging.getLogger(__name__)
+
+try:
+    import tensorflow as tf
+    keras = tf.keras
+    TF_AVAILABLE = True
+    logger.info(f"TensorFlow version {tf.__version__} loaded successfully")
+except ImportError:
+    TF_AVAILABLE = False
+    tf = None
+    keras = None
+    logger.warning("TensorFlow not available")
 
 # Add violence detection module to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'violence detection cdps'))
@@ -34,20 +46,23 @@ class ViolenceService:
         self.last_error = None
         
         try:
-            if VIOLENCE_MODULES_AVAILABLE:
+            if VIOLENCE_MODULES_AVAILABLE and TF_AVAILABLE:
                 # Load the violence detection model
                 model_path = os.path.join(os.path.dirname(__file__), '..', '..', 'violence detection cdps', 'violence', 'bensam02_model.h5')
                 if os.path.exists(model_path):
                     try:
-                        # Try loading with custom objects to handle compatibility issues
-                        self.model = tf.keras.models.load_model(model_path, compile=False)
-                        logger.info("Violence Detection Service initialized successfully")
+                        # Try loading with keras.models if available
+                        if keras and hasattr(keras, 'models'):
+                            self.model = keras.models.load_model(model_path, compile=False)
+                            logger.info("Violence Detection Service initialized successfully")
+                        else:
+                            raise ImportError("Keras models not available")
                     except Exception as model_error:
                         try:
-                            # Fallback: Try with custom objects None
-                            import tensorflow.keras.utils as utils
-                            self.model = tf.keras.models.load_model(model_path, custom_objects=None, compile=False)
-                            logger.info("Violence Detection Service initialized successfully (with fallback)")
+                            # Fallback: Try direct TensorFlow import
+                            import tensorflow.keras.models
+                            self.model = tensorflow.keras.models.load_model(model_path, compile=False)
+                            logger.info("Violence Detection Service initialized successfully (with direct import)")
                         except Exception as fallback_error:
                             self.enabled = False
                             self.last_error = f"Model loading failed: {str(model_error)}, Fallback: {str(fallback_error)}"
@@ -56,6 +71,10 @@ class ViolenceService:
                     self.enabled = False
                     self.last_error = f"Model not found at: {model_path}"
                     logger.warning(f"Violence Detection Service disabled - {self.last_error}")
+            elif not TF_AVAILABLE:
+                self.enabled = False
+                self.last_error = "TensorFlow not available"
+                logger.warning("Violence Detection Service disabled - TensorFlow not available")
             else:
                 self.enabled = False
                 logger.warning("Violence Detection Service disabled - missing dependencies")
@@ -245,7 +264,8 @@ class ViolenceService:
             "enabled": self.enabled,
             "last_error": self.last_error,
             "model_loaded": self.model is not None,
-            "modules_available": VIOLENCE_MODULES_AVAILABLE
+            "modules_available": VIOLENCE_MODULES_AVAILABLE,
+            "tensorflow_available": TF_AVAILABLE
         }
     
     def update_config(self, config_updates: Dict[str, Any]) -> bool:

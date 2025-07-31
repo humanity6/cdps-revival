@@ -14,26 +14,27 @@ def check_dependencies():
     """Check if all required dependencies are installed"""
     missing_deps = []
     
-    required_packages = [
-        'fastapi',
-        'uvicorn',
-        'opencv-python',
-        'numpy',
-        'pillow',
-        'pydantic'
-    ]
+    # Map package names to their actual import names
+    package_imports = {
+        'fastapi': 'fastapi',
+        'uvicorn': 'uvicorn',
+        'opencv-python': 'cv2',
+        'numpy': 'numpy',
+        'pillow': 'PIL',
+        'pydantic': 'pydantic'
+    }
     
-    for package in required_packages:
+    for package, import_name in package_imports.items():
         try:
-            __import__(package.replace('-', '_'))
+            __import__(import_name)
         except ImportError:
             missing_deps.append(package)
     
     if missing_deps:
-        print("❌ Missing required dependencies:")
+        print("Missing required dependencies:")
         for dep in missing_deps:
             print(f"   - {dep}")
-        print("\n💡 Install missing dependencies with:")
+        print("\nInstall missing dependencies with:")
         print("   pip install -r requirements.txt")
         return False
     
@@ -48,17 +49,17 @@ def check_models():
         ("Face Recognition", "Available through face-recognition package")
     ]
     
-    print("🔍 Checking model availability...")
+    print("Checking model availability...")
     
     for model_name, path in model_paths:
         if path.startswith("Available"):
-            print(f"   ✅ {model_name}: {path}")
+            print(f"   [OK] {model_name}: {path}")
         else:
             full_path = os.path.join(os.path.dirname(__file__), path)
             if os.path.exists(full_path):
-                print(f"   ✅ {model_name}: Found at {path}")
+                print(f"   [OK] {model_name}: Found at {path}")
             else:
-                print(f"   ⚠️  {model_name}: Not found at {path}")
+                print(f"   [WARN] {model_name}: Not found at {path}")
 
 def main():
     parser = argparse.ArgumentParser(description="Crime Detection Backend API")
@@ -73,7 +74,7 @@ def main():
     
     args = parser.parse_args()
     
-    print("🚀 Crime Detection Backend API")
+    print("Crime Detection Backend API")
     print("=" * 50)
     
     # Check dependencies
@@ -84,17 +85,17 @@ def main():
     check_models()
     
     if args.check_only:
-        print("\n✅ Dependency and model check completed")
+        print("\n[OK] Dependency and model check completed")
         return
     
-    print(f"\n🌐 Starting server on {args.host}:{args.port}")
-    print(f"📊 Log level: {args.log_level}")
-    print(f"🔄 Auto-reload: {'Enabled' if args.reload else 'Disabled'}")
-    print(f"🐛 Debug mode: {'Enabled' if args.debug else 'Disabled'}")
-    print("\n📖 API Documentation:")
+    print(f"\nStarting server on {args.host}:{args.port}")
+    print(f"Log level: {args.log_level}")
+    print(f"Auto-reload: {'Enabled' if args.reload else 'Disabled'}")
+    print(f"Debug mode: {'Enabled' if args.debug else 'Disabled'}")
+    print("\nAPI Documentation:")
     print(f"   - Swagger UI: http://{args.host}:{args.port}/docs")
     print(f"   - ReDoc: http://{args.host}:{args.port}/redoc")
-    print("\n🔌 WebSocket Endpoint:")
+    print("\nWebSocket Endpoint:")
     print(f"   - Live Feed: ws://{args.host}:{args.port}/api/live/ws/{{client_id}}")
     print("\n" + "=" * 50)
     
@@ -124,13 +125,13 @@ def main():
         )
         
     except KeyboardInterrupt:
-        print("\n👋 Server stopped by user")
+        print("\nServer stopped by user")
     except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("💡 Make sure all dependencies are installed")
+        print(f"Import error: {e}")
+        print("Make sure all dependencies are installed")
         sys.exit(1)
     except Exception as e:
-        print(f"💥 Server error: {e}")
+        print(f"Server error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

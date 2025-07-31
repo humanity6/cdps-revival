@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
-from sqlalchemy import create_engine, event, pool
+from sqlalchemy import create_engine, event, pool, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import StaticPool, QueuePool
@@ -354,7 +354,7 @@ class DatabaseConnectionManager:
                 session = self.get_session()
                 try:
                     # Simple query to test connection
-                    session.execute("SELECT 1")
+                    session.execute(text("SELECT 1"))
                     session.commit()
                     
                     # Health check passed
@@ -421,7 +421,7 @@ class DatabaseConnectionManager:
             with self._lock:
                 session = self.get_session()
                 try:
-                    session.execute(f"VACUUM INTO '{backup_path}'")
+                    session.execute(text(f"VACUUM INTO '{backup_path}'"))
                     session.commit()
                     
                     self.last_backup = time.time()
@@ -499,7 +499,7 @@ class DatabaseConnectionManager:
                 session = self.get_session()
                 try:
                     logger.info("Starting database vacuum...")
-                    session.execute("VACUUM")
+                    session.execute(text("VACUUM"))
                     session.commit()
                     
                     self.last_vacuum = time.time()
@@ -523,7 +523,7 @@ class DatabaseConnectionManager:
                 session = self.get_session()
                 try:
                     logger.info("Starting database analyze...")
-                    session.execute("ANALYZE")
+                    session.execute(text("ANALYZE"))
                     session.commit()
                     
                     self.last_analyze = time.time()
@@ -585,7 +585,7 @@ class DatabaseConnectionManager:
         try:
             session = self.get_session()
             try:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
                 return True
             finally:
                 self.close_session(session)

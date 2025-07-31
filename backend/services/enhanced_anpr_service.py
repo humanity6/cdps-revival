@@ -32,7 +32,7 @@ except ImportError as e:
     ANPRConfig = None
     EnhancedPlateRecognitionEngine = None
 
-from ..models.detection_models import ANPRDetection, ANPRResponse, BoundingBox
+from models.detection_models import ANPRDetection, ANPRResponse, BoundingBox
 from .database_service import get_database_service
 
 logger = logging.getLogger(__name__)

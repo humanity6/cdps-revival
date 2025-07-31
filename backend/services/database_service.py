@@ -10,12 +10,13 @@ import json
 import threading
 import time
 from pathlib import Path
+from sqlalchemy import text
 
-from ..database.models import DatabaseManager, Event, QueryHelpers
-from ..database.operations import DatabaseOperations  
-from ..database.schema import initialize_database, EventType, SeverityLevel, EventStatus
-from .alert_service import UnifiedAlertManager, AlertConfiguration, AlertPriority, AlertType
-from .alert_templates import get_template_engine, TemplateType
+from database.models import DatabaseManager, Event, QueryHelpers
+from database.operations import DatabaseOperations  
+from database.schema import initialize_database, EventType, SeverityLevel, EventStatus
+from services.alert_service import UnifiedAlertManager, AlertConfiguration, AlertPriority, AlertType
+from services.alert_templates import get_template_engine, TemplateType
 
 logger = logging.getLogger(__name__)
 
@@ -465,7 +466,7 @@ class DatabaseService:
                 }
                 
                 # Add metadata
-                if event.metadata:
+                if event.event_metadata:
                     event_dict['metadata'] = event.get_metadata()
                 
                 result.append(event_dict)
@@ -576,7 +577,7 @@ class DatabaseService:
         try:
             # Test database connection
             session = self.db_manager.get_session()
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
             self.db_manager.close_session(session)
             results['database'] = True
             

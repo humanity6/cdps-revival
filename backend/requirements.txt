@@ -51,3 +51,6 @@ Werkzeug>=2.3.0
 aiofiles>=23.0.0
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
+
+# Telegram bot integration
+python-telegram-bot>=20.0

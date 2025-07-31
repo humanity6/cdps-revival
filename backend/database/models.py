@@ -51,7 +51,7 @@ class Event(Base):
     confidence_score = Column(Float)
     status = Column(String(20), default='PENDING')
     location = Column(String(100), default='Camera_1')
-    metadata = Column(Text)  # JSON field
+    event_metadata = Column(Text)  # JSON field
     alert_triggered = Column(Boolean, default=False)
     severity_level = Column(String(20), default='MEDIUM')
     image_path = Column(String(500))
@@ -78,16 +78,16 @@ class Event(Base):
     
     def get_metadata(self) -> Dict[str, Any]:
         """Parse metadata JSON field."""
-        if self.metadata:
+        if self.event_metadata:
             try:
-                return json.loads(self.metadata)
+                return json.loads(self.event_metadata)
             except json.JSONDecodeError:
                 return {}
         return {}
     
     def set_metadata(self, data: Dict[str, Any]):
         """Set metadata JSON field."""
-        self.metadata = json.dumps(data)
+        self.event_metadata = json.dumps(data)
     
     def __repr__(self):
         return f"<Event(id={self.id}, type={self.event_type}, timestamp={self.timestamp})>"

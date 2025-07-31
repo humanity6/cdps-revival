@@ -16,17 +16,14 @@ import base64
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'anpr'))
 
 try:
+    # Import ANPRConfig from backend config (which imports it from ANPR module)
+    from config import ANPRConfig
+    
+    # Import other ANPR modules
     from anpr_system import ANPRDetectionSystem
     from plate_recognition import EnhancedPlateRecognitionEngine
-    # Import ANPRConfig from the original ANPR module
-    import sys
-    import os
-    anpr_path = os.path.join(os.path.dirname(__file__), '..', '..', 'anpr')
-    if anpr_path not in sys.path:
-        sys.path.append(anpr_path)
-    from config import ANPRConfig as OriginalANPRConfig
-    ANPRConfig = OriginalANPRConfig
-except ImportError as e:
+    
+except Exception as e:
     logging.warning(f"Could not import ANPR modules: {e}")
     ANPRDetectionSystem = None
     ANPRConfig = None

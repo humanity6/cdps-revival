@@ -27,8 +27,8 @@ except ImportError:
     NetworkError = Exception
     RetryAfter = Exception
 
-from ..database.operations import DatabaseOperations
-from ..database.models import DatabaseManager, Event, EventTypeEnum, SeverityLevelEnum
+from database.operations import DatabaseOperations
+from database.models import DatabaseManager, Event, EventTypeEnum, SeverityLevelEnum
 
 logger = logging.getLogger(__name__)
 

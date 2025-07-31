@@ -22,13 +22,22 @@ from config import backend_config, ensure_directories
 from services import ANPRService, FaceService, ViolenceService, WeaponService
 
 # Routers
-from routers import detection_router, live_feed_router, settings_router
+from routers import (
+    detection_router, 
+    live_feed_router, 
+    settings_router,
+    system_router,
+    analytics_router,
+    detections_router,
+    alerts_router
+)
 from routers.detection import set_detection_services
 from routers.live_feed import set_websocket_manager
 from routers.settings import set_detection_services as set_settings_services
 
 # Utilities
 from utils.websocket_manager import WebSocketManager
+from utils.socketio_manager import socketio_manager
 
 # Configure logging
 logging.basicConfig(
@@ -185,10 +194,17 @@ try:
 except Exception as e:
     logger.warning(f"Could not mount static files: {e}")
 
+# Mount Socket.io app
+app.mount("/socket.io", socketio_manager.get_asgi_app())
+
 # Include routers
 app.include_router(detection_router)
 app.include_router(live_feed_router)  
 app.include_router(settings_router)
+app.include_router(system_router, prefix="/api/system", tags=["system"])
+app.include_router(analytics_router, prefix="/api/analytics", tags=["analytics"])
+app.include_router(detections_router, prefix="/api/detections", tags=["detections"])
+app.include_router(alerts_router, prefix="/api/alerts", tags=["alerts"])
 
 # Root endpoints
 @app.get("/")

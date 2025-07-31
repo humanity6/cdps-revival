@@ -17,18 +17,61 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'face detect
 
 try:
     # Import face detection modules from the correct path
+    import sys
+    import os
     face_path = os.path.join(os.path.dirname(__file__), '..', '..', 'face detection')
-    if face_path not in sys.path:
-        sys.path.append(face_path)
+    abs_face_path = os.path.abspath(face_path)
     
-    from face_detection_system import FaceDetectionSystem
-    from main import EnhancedFaceDetectionSystem
-    import config as face_config
-except ImportError as e:
+    # Store original config module to restore later
+    original_config = sys.modules.get('config')
+    
+    if abs_face_path not in sys.path:
+        sys.path.insert(0, abs_face_path)  # Use insert(0) to prioritize face detection path
+    
+    # Import face config with explicit path to avoid conflicts
+    import importlib.util
+    face_config_path = os.path.join(abs_face_path, "config.py")
+    face_config_spec = importlib.util.spec_from_file_location("face_config", face_config_path)
+    face_config_module = importlib.util.module_from_spec(face_config_spec)
+    face_config_spec.loader.exec_module(face_config_module)
+    face_config = face_config_module
+    
+    # Temporarily add the face config to sys.modules as 'config' so imports will find it
+    sys.modules['config'] = face_config_module
+    
+    # Load performance monitor first
+    perf_spec = importlib.util.spec_from_file_location("performance_monitor", os.path.join(abs_face_path, "performance_monitor.py"))
+    perf_module = importlib.util.module_from_spec(perf_spec)
+    perf_spec.loader.exec_module(perf_module)
+    
+    # Import face detection modules with explicit module loading
+    face_system_spec = importlib.util.spec_from_file_location("face_detection_system", os.path.join(abs_face_path, "face_detection_system.py"))
+    face_system_module = importlib.util.module_from_spec(face_system_spec)
+    face_system_spec.loader.exec_module(face_system_module)
+    FaceDetectionSystem = face_system_module.FaceDetectionSystem
+    
+    main_spec = importlib.util.spec_from_file_location("face_main", os.path.join(abs_face_path, "main.py"))
+    main_module = importlib.util.module_from_spec(main_spec)
+    main_spec.loader.exec_module(main_module)
+    EnhancedFaceDetectionSystem = main_module.EnhancedFaceDetectionSystem
+    
+    # Restore original config module to prevent conflicts
+    if original_config is not None:
+        sys.modules['config'] = original_config
+    elif 'config' in sys.modules:
+        del sys.modules['config']
+    
+except Exception as e:
     logging.warning(f"Could not import face detection modules: {e}")
     FaceDetectionSystem = None
     EnhancedFaceDetectionSystem = None
     face_config = None
+    
+    # Restore original config module even on error
+    if 'original_config' in locals() and original_config is not None:
+        sys.modules['config'] = original_config
+    elif 'config' in sys.modules:
+        del sys.modules['config']
 
 from models.detection_models import FaceDetection, FaceResponse, BoundingBox
 
@@ -42,7 +85,7 @@ class FaceService:
         self.last_error = None
         
         try:
-            if EnhancedFaceDetectionSystem:
+            if EnhancedFaceDetectionSystem and face_config:
                 self.face_system = EnhancedFaceDetectionSystem(enable_performance_monitor=False)
                 logger.info("Face Recognition Service initialized successfully")
             elif FaceDetectionSystem:
